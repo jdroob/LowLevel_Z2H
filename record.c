@@ -234,7 +234,7 @@ record_list *update_records(char *filename, record_list *records) {
                         old_fname, old_lname, old_addr, &old_hrs,
                         new_fname, new_lname, new_addr, &new_hrs);
     while (result != EOF) {
-        if (result != 6) {
+        if (result != 8) {
             fprintf(stderr, "Error! Incorrect input file format: %s", filename);
             exit(EXIT_FAILURE);
         }
@@ -346,7 +346,7 @@ record_list *read_records(char *filename) {
     unsigned hrs;
     int result = fscanf(fh, "%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%*c", fname, lname, addr, &hrs);
     while (result != EOF) {
-        if (result != 3) {
+        if (result != 4) {
             fprintf(stderr, "Error! Incorrect input file format: %s", filename);
             exit(EXIT_FAILURE);
         }

@@ -159,7 +159,7 @@ void handle_opts(opt *options) {
     if (options->firstname) {
         if (options->lastname) {
             if (options->address) {
-                if (options->hours) {   // -ffirstname -flastname -faddress -fhours
+                if (options->hours != -1) {   // -ffirstname -flastname -faddress -fhours
                     record_list *found = find_record_full(options->firstname, options->lastname, options->address, options->hours, records);
                     print_records(found);
                     free_recs(found);
@@ -172,7 +172,7 @@ void handle_opts(opt *options) {
                     print_records(found);
                     free_recs(found);
                 }
-            } else if (options->hours) {    // -ffirstname -flastname -fhours
+            } else if (options->hours != -1) {    // -ffirstname -flastname -fhours
                 record_list *tmp = find_record_fname(options->firstname, records);
                 record_list *tmp2 = find_record_lname(options->lastname, tmp);
                 record_list *found = find_record_hrs(options->hours, tmp2);
@@ -188,7 +188,7 @@ void handle_opts(opt *options) {
                 free_recs(found);
             }
         } else if (options->address) {
-            if (options->hours) {   // -ffirstname -faddress -fhours
+            if (options->hours != -1) {   // -ffirstname -faddress -fhours
                 record_list *tmp = find_record_fname(options->firstname, records);
                 record_list *tmp2 = find_record_addr(options->address, tmp);
                 record_list *found = find_record_hrs(options->hours, tmp2);
@@ -203,7 +203,7 @@ void handle_opts(opt *options) {
                 print_records(found);
                 free_recs(found);
             }
-        } else if (options->hours) {    // -ffirstname -fhours
+        } else if (options->hours != -1) {    // -ffirstname -fhours
             record_list *tmp = find_record_fname(options->firstname, records);
             record_list *found = find_record_hrs(options->hours, tmp);
             free_recs(tmp);
@@ -216,7 +216,7 @@ void handle_opts(opt *options) {
         }
     } else if (options->lastname) {
         if (options->address) {
-            if (options->hours) {   // -flastname -faddress -fhours
+            if (options->hours != -1) {   // -flastname -faddress -fhours
                 record_list *tmp = find_record_lname(options->lastname, records);
                 record_list *tmp2 = find_record_addr(options->address, tmp);
                 record_list *found = find_record_hrs(options->hours, tmp2);
@@ -231,7 +231,7 @@ void handle_opts(opt *options) {
                 print_records(found);
                 free_recs(found);
             }
-        } else if (options->hours) {    // -flastname -fhours
+        } else if (options->hours != -1) {    // -flastname -fhours
             record_list *tmp = find_record_lname(options->lastname, records);
             record_list *found = find_record_hrs(options->hours, tmp);
             free_recs(tmp);
@@ -243,7 +243,7 @@ void handle_opts(opt *options) {
             free_recs(found);
         }
     } else if (options->address) {
-        if (options->hours) {   // -faddress -fhours
+        if (options->hours != -1) {   // -faddress -fhours
             record_list *tmp = find_record_addr(options->address, records);
             record_list *found = find_record_hrs(options->hours, tmp);
             free_recs(tmp);
