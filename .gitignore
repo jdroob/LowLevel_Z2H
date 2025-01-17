@@ -1,0 +1,7 @@
+*.csv
+.vscode
+scratch
+analysis_build
+debug_build
+test_build
+deploy_build
