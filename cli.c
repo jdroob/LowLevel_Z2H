@@ -8,7 +8,8 @@ static void init_opts(opt *options) {
     options->removals = NULL;
     options->updates = NULL;
     options->output = NULL;
-    options->name = NULL;
+    options->firstname = NULL;
+    options->lastname = NULL;
     options->address = NULL;
     options->hours = -1;
     options->get_count = 0;
@@ -25,8 +26,10 @@ static void free_opts(opt *options) {
     options->updates = NULL;
     free(options->output);
     options->output = NULL;
-    free(options->name);
-    options->name = NULL;
+    free(options->firstname);
+    options->firstname = NULL;
+    free(options->lastname);
+    options->lastname = NULL;
     free(options->address);
     options->address = NULL;
     free(options);
@@ -38,8 +41,8 @@ void teardown(opt *options) {
 
 void usage(void) {
     puts("\nUsage: <executable> -d <input> -a <additions> -r <removals> \
-     -u <updates> -fname \"<name>\" -faddress \"<address>\" -fhours <hours> \
-     --count -o <output>\n");
+     -u <updates> -ffirstname \"<firstname>\" -flastname \"<lasstname>\" \
+     -faddress \"<address>\" -fhours <hours> --count -o <output>\n");
 }
 
 opt *parse_opts(int argc, char *argv[]) {
@@ -78,11 +81,17 @@ opt *parse_opts(int argc, char *argv[]) {
             strncpy(options->updates, argv[i+1], strlen(argv[i+1])+1);
             options->updates[strlen(argv[i+1])] = '\0';
             i += 2;
-        } else if ((strcmp(argv[i], "-fname") == 0) &&
+        } else if ((strcmp(argv[i], "-ffirstname") == 0) &&
             i+1 < argc) {
-            options->name = (char*)malloc(strlen(argv[i+1])+1);
-            strncpy(options->name, argv[i+1], strlen(argv[i+1])+1);
-            options->name[strlen(argv[i+1])] = '\0';
+            options->firstname = (char*)malloc(strlen(argv[i+1])+1);
+            strncpy(options->firstname, argv[i+1], strlen(argv[i+1])+1);
+            options->firstname[strlen(argv[i+1])] = '\0';
+            i += 2;
+        } else if ((strcmp(argv[i], "-flastname") == 0) &&
+            i+1 < argc) {
+            options->lastname = (char*)malloc(strlen(argv[i+1])+1);
+            strncpy(options->lastname, argv[i+1], strlen(argv[i+1])+1);
+            options->lastname[strlen(argv[i+1])] = '\0';
             i += 2;
         } else if ((strcmp(argv[i], "-faddress") == 0) &&
             i+1 < argc) {
@@ -147,27 +156,89 @@ void handle_opts(opt *options) {
     }
 
     // Step 5: Handle searches, if any
-    if (options->name) { 
-        if (options->address) {
-            if (options->hours) {   // -fname -faddress -fhours
-                record_list *found = find_record(options->name, options->address, options->hours, records);
+    if (options->firstname) {
+        if (options->lastname) {
+            if (options->address) {
+                if (options->hours) {   // -ffirstname -flastname -faddress -fhours
+                    record_list *found = find_record_full(options->firstname, options->lastname, options->address, options->hours, records);
+                    print_records(found);
+                    free_recs(found);
+                } else {    // -ffirstname -flastname -faddress
+                    record_list *tmp = find_record_fname(options->firstname, records);
+                    record_list *tmp2 = find_record_lname(options->lastname, tmp);
+                    record_list *found = find_record_addr(options->address, tmp2);
+                    free_recs(tmp);
+                    free_recs(tmp2);
+                    print_records(found);
+                    free_recs(found);
+                }
+            } else if (options->hours) {    // -ffirstname -flastname -fhours
+                record_list *tmp = find_record_fname(options->firstname, records);
+                record_list *tmp2 = find_record_lname(options->lastname, tmp);
+                record_list *found = find_record_hrs(options->hours, tmp2);
+                free_recs(tmp);
+                free_recs(tmp2);
                 print_records(found);
                 free_recs(found);
-            } else {    // -fname -faddress
-                record_list *tmp = find_record_name(options->name, records);
+            } else {    // -ffirstname -flastname
+                record_list *tmp = find_record_fname(options->firstname, records);
+                record_list *found = find_record_fname(options->lastname, tmp);
+                free_recs(tmp);
+                print_records(found);
+                free_recs(found);
+            }
+        } else if (options->address) {
+            if (options->hours) {   // -ffirstname -faddress -fhours
+                record_list *tmp = find_record_fname(options->firstname, records);
+                record_list *tmp2 = find_record_addr(options->address, tmp);
+                record_list *found = find_record_hrs(options->hours, tmp2);
+                free_recs(tmp);
+                free_recs(tmp2);
+                print_records(found);
+                free_recs(found);
+            } else {    // -ffirstname -faddress
+                record_list *tmp = find_record_fname(options->firstname, records);
                 record_list *found = find_record_addr(options->address, tmp);
                 free_recs(tmp);
                 print_records(found);
                 free_recs(found);
             }
-        } else if (options->hours) {    // -fname -fhours
-            record_list *tmp = find_record_name(options->name, records);
+        } else if (options->hours) {    // -ffirstname -fhours
+            record_list *tmp = find_record_fname(options->firstname, records);
             record_list *found = find_record_hrs(options->hours, tmp);
             free_recs(tmp);
             print_records(found);
             free_recs(found);
-        } else {    // -fname
-            record_list *found = find_record_name(options->name, records);
+        } else {    // -ffirstname
+            record_list *found = find_record_fname(options->firstname, records);
+            print_records(found);
+            free_recs(found);
+        }
+    } else if (options->lastname) {
+        if (options->address) {
+            if (options->hours) {   // -flastname -faddress -fhours
+                record_list *tmp = find_record_lname(options->lastname, records);
+                record_list *tmp2 = find_record_addr(options->address, tmp);
+                record_list *found = find_record_hrs(options->hours, tmp2);
+                free_recs(tmp);
+                free_recs(tmp2);
+                print_records(found);
+                free_recs(found);
+            } else {    // -flastname -faddress
+                record_list *tmp = find_record_lname(options->lastname, records);
+                record_list *found = find_record_addr(options->address, tmp);
+                free_recs(tmp);
+                print_records(found);
+                free_recs(found);
+            }
+        } else if (options->hours) {    // -flastname -fhours
+            record_list *tmp = find_record_lname(options->lastname, records);
+            record_list *found = find_record_hrs(options->hours, tmp);
+            free_recs(tmp);
+            print_records(found);
+            free_recs(found);
+        } else {    // -flastname
+            record_list *found = find_record_lname(options->lastname, records);
             print_records(found);
             free_recs(found);
         }

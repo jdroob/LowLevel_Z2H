@@ -3,7 +3,8 @@
 
 static void clean_up(record_list *records) {
     for (unsigned i=0; i<records->count; ++i) {
-        free(records->records[i].name);
+        free(records->records[i].firstname);
+        free(records->records[i].lastname);
         free(records->records[i].addr);
     }
     free(records->records);
@@ -12,7 +13,8 @@ static void clean_up(record_list *records) {
 
 static void init_records(unsigned start, unsigned end, record_list *records) {
     for (unsigned i=start; i<end; ++i) {
-        records->records[i].name = NULL;
+        records->records[i].firstname = NULL;
+        records->records[i].lastname = NULL;
         records->records[i].addr = NULL;
         records->records[i].hours = 0;
     }
@@ -31,7 +33,8 @@ static void grow_records(record_list *records) {
 }
 
 static int match(record a, record b) {
-    return ((strcmp(a.name, b.name) == 0 &&
+    return (((strcmp(a.firstname, b.firstname) == 0 &&
+              strcmp(a.lastname, b.lastname) == 0) &&
             strcmp(a.addr, b.addr) == 0) &&
             a.hours == b.hours);
 }
@@ -53,24 +56,34 @@ record_list *create_record_list(void) {
     return records;
 }
 
-record_list *add_record(char *name, char *address, hours_t hrs, record_list *records) {
+record_list *add_record(char *firstname, char *lastname, char *address, hours_t hrs, record_list *records) {
     if (records->count == records->max_size) {
         grow_records(records);
     }
 
-    size_t str_size = strlen(name);
-    records->records[records->count].name = (char*)malloc(str_size+1);
-    if (!(records->records[records->count].name)) {
+    size_t str_size = strlen(firstname);
+    records->records[records->count].firstname = (char*)malloc(str_size+1);
+    if (!(records->records[records->count].firstname)) {
+        fprintf(stderr, "Error! Unable to allocate record firstname\n");
+        free(records);
+        exit(EXIT_FAILURE);
+    }
+    strncpy(records->records[records->count].firstname, firstname, str_size);
+    records->records[records->count].firstname[str_size] = '\0';
+    
+    str_size = strlen(lastname);
+    records->records[records->count].lastname = (char*)malloc(str_size+1);
+    if (!(records->records[records->count].lastname)) {
         fprintf(stderr, "Error! Unable to allocate record name\n");
         free(records);
         exit(EXIT_FAILURE);
     }
-    strncpy(records->records[records->count].name, name, str_size);
-    records->records[records->count].name[str_size] = '\0';
+    strncpy(records->records[records->count].lastname, lastname, str_size);
+    records->records[records->count].lastname[str_size] = '\0';
 
     str_size = strlen(address);
     records->records[records->count].addr = (char*)malloc(str_size+1);
-    if (!(records->records[records->count].name)) {
+    if (!(records->records[records->count].addr)) {
         fprintf(stderr, "Error! Unable to allocate record address\n");
         free(records);
         exit(EXIT_FAILURE);
@@ -86,29 +99,42 @@ record_list *add_record(char *name, char *address, hours_t hrs, record_list *rec
 
 record_list *add_records(record_list *additions, record_list *records) {
     for (unsigned i=0; i<additions->count; ++i) {
-        add_record(additions->records[i].name, additions->records[i].addr, additions->records[i].hours, records);
+        add_record(additions->records[i].firstname, additions->records[i].lastname, additions->records[i].addr, additions->records[i].hours, records);
     }
     clean_up(additions);
     return records;
 }
 
-record_list *find_record(char *name, char *address, hours_t hours, record_list *records) {
+record_list *find_record_full(char *firstname, char *lastname, char *address, hours_t hours, record_list *records) {
     record_list *found_records = create_record_list();
     for (unsigned i=0; i<records->count; ++i) {
-        if ((strcmp(records->records[i].name, name) == 0 &&
-            strcmp(records->records[i].addr, address) == 0) &&
+        if (((strcmp(records->records[i].firstname, firstname) == 0 &&
+             strcmp(records->records[i].lastname, lastname) == 0) &&
+             strcmp(records->records[i].addr, address) == 0) &&
             records->records[i].hours == hours) {
-                add_record(name, address, hours, found_records);
+                add_record(firstname, lastname, address, hours, found_records);
         }
     }
     return found_records;
 }
 
-record_list *find_record_name(char *name, record_list *records) {
+record_list *find_record_fname(char *firstname, record_list *records) {
     record_list *found_records = create_record_list();
     for (unsigned i=0; i<records->count; ++i) {
-        if (strcmp(records->records[i].name, name) == 0) {
-            add_record(name, records->records[i].addr, records->records[i].hours, found_records);
+        if (strcmp(records->records[i].firstname, firstname) == 0) {
+            add_record(firstname, records->records[i].lastname, records->records[i].addr, \
+             records->records[i].hours, found_records);
+        }
+    }
+    return found_records;
+}
+
+record_list *find_record_lname(char *lastname, record_list *records) {
+    record_list *found_records = create_record_list();
+    for (unsigned i=0; i<records->count; ++i) {
+        if (strcmp(records->records[i].lastname, lastname) == 0) {
+            add_record(records->records[i].firstname, lastname, records->records[i].addr, \
+             records->records[i].hours, found_records);
         }
     }
     return found_records;
@@ -118,7 +144,7 @@ record_list *find_record_addr(char *address, record_list *records) {
     record_list *found_records = create_record_list();
     for (unsigned i=0; i<records->count; ++i) {
         if (strcmp(records->records[i].addr, address) == 0) {
-                add_record(records->records[i].name, address, records->records[i].hours, found_records);
+                add_record(records->records[i].firstname, records->records[i].lastname, address, records->records[i].hours, found_records);
         }
     }
     return found_records;
@@ -128,7 +154,7 @@ record_list *find_record_hrs(hours_t hrs, record_list *records) {
     record_list *found_records = create_record_list();
     for (unsigned i=0; i<records->count; ++i) {
         if (records->records[i].hours == hrs) {
-                add_record(records->records[i].name, records->records[i].addr, hrs, found_records);
+                add_record(records->records[i].firstname, records->records[i].lastname, records->records[i].addr, hrs, found_records);
         }
     }
     return found_records;
@@ -145,12 +171,15 @@ record_list *remove_records(record_list *removals, record_list *records) {
     // Step 1: Flag records to be removed
     for (unsigned i=0; i<removals->count; ++i) {
         for (unsigned j=0; j<records->count; ++j) {
-            if (records->records[j].name != NULL && 
+            if (records->records[j].firstname != NULL &&  
+                records->records[j].lastname != NULL &&  
                 records->records[j].addr != NULL &&
                 records->records[j].hours != -1) {  // if records->records[i] hasn't already been flagged for removal
-                if (strcmp(records->records[j].name, removals->records[i].name) == 0 &&
-                    strcmp(records->records[j].addr, removals->records[i].addr) == 0) {   // Removal condition
-                        free(records->records[j].name); records->records[j].name = NULL;
+                if ((strcmp(records->records[j].firstname, removals->records[i].firstname) == 0 &&
+                     strcmp(records->records[j].lastname, removals->records[i].lastname) == 0) &&
+                     strcmp(records->records[j].addr, removals->records[i].addr) == 0) {   // Removal condition
+                        free(records->records[j].firstname); records->records[j].firstname = NULL;
+                        free(records->records[j].lastname); records->records[j].lastname = NULL;
                         free(records->records[j].addr); records->records[j].addr = NULL;
                         records->records[j].hours = -1;
                         ++remove_count;
@@ -171,7 +200,7 @@ record_list *remove_records(record_list *removals, record_list *records) {
     unsigned i = 0;
     record *curr = records->records;
     while (i < records->count) {
-        if (curr->name == NULL || curr->addr == NULL || curr->hours == -1) {   // NULL record
+        if (curr->firstname == NULL || curr->lastname == NULL || curr->addr == NULL || curr->hours == -1) {   // NULL record
             curr++;
         } else {
             fresh_array[i++] = *curr;   // Note to self: derefing a struct just means all the bytes in that struct are accessed (i.e. all members)
@@ -197,22 +226,23 @@ record_list *update_records(char *filename, record_list *records) {
 
     // Step 3: Read in file format as follows:
     //      <old record>, <new record>
-    char old_name[BUFFSIZE], new_name[BUFFSIZE]; 
+    char old_fname[BUFFSIZE], new_fname[BUFFSIZE];   
+    char old_lname[BUFFSIZE], new_lname[BUFFSIZE];   
     char old_addr[BUFFSIZE], new_addr[BUFFSIZE]; 
     unsigned old_hrs, new_hrs;
-    int result = fscanf(fh, "%[^,]%*c%[^,]%*c%u%*c%[^,]%*c%[^,]%*c%u%*c%*c",
-                        old_name, old_addr, &old_hrs,
-                        new_name, new_addr, &new_hrs);
+    int result = fscanf(fh, "%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%*c",
+                        old_fname, old_lname, old_addr, &old_hrs,
+                        new_fname, new_lname, new_addr, &new_hrs);
     while (result != EOF) {
         if (result != 6) {
             fprintf(stderr, "Error! Incorrect input file format: %s", filename);
             exit(EXIT_FAILURE);
         }
-        add_record(old_name, old_addr, old_hrs, old_records);
-        add_record(new_name, new_addr, new_hrs, new_records);
-        result = fscanf(fh, "%[^,]%*c%[^,]%*c%u%*c%[^,]%*c%[^,]%*c%u%*c%*c",
-                        old_name, old_addr, &old_hrs,
-                        new_name, new_addr, &new_hrs);
+        add_record(old_fname, old_lname, old_addr, old_hrs, old_records);
+        add_record(new_fname, new_lname, new_addr, new_hrs, new_records);
+        result = fscanf(fh, "%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%*c",
+                        old_fname, old_lname, old_addr, &old_hrs,
+                        new_fname, new_lname, new_addr, &new_hrs);
     }
 
     // Step 4: For each record in records that matches a record in old_records,
@@ -220,10 +250,13 @@ record_list *update_records(char *filename, record_list *records) {
     for (unsigned i=0; i<records->count; ++i) {
         for (unsigned j=0; j<old_records->count; ++j) {
             if (match(old_records->records[j], records->records[i])) {
-                free(records->records[i].name);
+                free(records->records[i].firstname);
+                free(records->records[i].lastname);
                 free(records->records[i].addr);
-                records->records[i].name = (char*)malloc(strlen(new_records->records[j].name)+1);
-                strncpy(records->records[i].name, new_records->records[j].name, strlen(new_records->records[j].name)+1);
+                records->records[i].firstname = (char*)malloc(strlen(new_records->records[j].firstname)+1);
+                strncpy(records->records[i].firstname, new_records->records[j].firstname, strlen(new_records->records[j].firstname)+1);
+                records->records[i].lastname = (char*)malloc(strlen(new_records->records[j].lastname)+1);
+                strncpy(records->records[i].lastname, new_records->records[j].lastname, strlen(new_records->records[j].lastname)+1);
                 records->records[i].addr = (char*)malloc(strlen(new_records->records[j].addr)+1);
                 strncpy(records->records[i].addr, new_records->records[j].addr, strlen(new_records->records[j].addr)+1);
                 records->records[i].hours = new_records->records[j].hours;
@@ -309,16 +342,16 @@ record_list *read_records(char *filename) {
     record_list *input_records = create_record_list();
 
     // Step 3: Iterate through lines in file and add records to record list
-    char name[BUFFSIZE], addr[BUFFSIZE];
+    char fname[BUFFSIZE], lname[BUFFSIZE], addr[BUFFSIZE];
     unsigned hrs;
-    int result = fscanf(fh, "%[^,]%*c%[^,]%*c%u%*c%*c", name, addr, &hrs);
+    int result = fscanf(fh, "%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%*c", fname, lname, addr, &hrs);
     while (result != EOF) {
         if (result != 3) {
             fprintf(stderr, "Error! Incorrect input file format: %s", filename);
             exit(EXIT_FAILURE);
         }
-        add_record(name, addr, hrs, input_records);
-        result = fscanf(fh, "%[^,]%*c%[^,]%*c%u%*c%*c", name, addr, &hrs);
+        add_record(fname, lname, addr, hrs, input_records);
+        result = fscanf(fh, "%[^,]%*c%[^,]%*c%[^,]%*c%u%*c%*c", fname, lname, addr, &hrs);
     }
 
     // Step 4: Close file
@@ -343,9 +376,11 @@ void write_records(char *filename, record_list *records) {
     // Step 3: Iterate through records list and write each reacord in CSV format
     unsigned i=0;
     for (; i<records->count-1; ++i) {
-        fprintf(fh, "%s,%s,%u,\n", records->records[i].name, records->records[i].addr, records->records[i].hours);
+        fprintf(fh, "%s,%s,%s,%u,\n", records->records[i].firstname, records->records[i].lastname, \
+         records->records[i].addr, records->records[i].hours);
     }
-    fprintf(fh, "%s,%s,%u,", records->records[i].name, records->records[i].addr, records->records[i].hours);
+    fprintf(fh, "%s,%s,%s,%u,", records->records[i].firstname, records->records[i].lastname, \
+     records->records[i].addr, records->records[i].hours);
 
     // Step 4: Close file
     fclose(fh);
@@ -357,7 +392,8 @@ void get_count(record_list *records) {
 
 void print_records(record_list *records) {
     for (unsigned i=0; i<records->count; ++i) {
-        printf("Name: %s,\tAddress: %s, Hours: %d\n", records->records[i].name, records->records[i].addr, records->records[i].hours);
+        printf("Name: %s %s,\tAddress: %s, Hours: %d\n", records->records[i].firstname, \
+        records->records[i].lastname, records->records[i].addr, records->records[i].hours);
     }
 }
 

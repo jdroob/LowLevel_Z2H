@@ -6,7 +6,8 @@
 #define BUFFSIZE 512
 
 __attribute__((__packed__)) struct record {
-    char *name;
+    char *firstname;
+    char *lastname;
     char *addr;
     unsigned int hours;
 };

@@ -7,7 +7,8 @@ __attribute__((__packed__)) struct opt {
     char *removals;
     char *updates;
     char *output;
-    char *name;
+    char *firstname;
+    char *lastname;
     char *address;
     int hours;
     int get_count;
